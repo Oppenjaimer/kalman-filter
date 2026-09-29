@@ -1,5 +1,6 @@
 #include "kf.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <random>
 
@@ -49,6 +50,14 @@ int main() {
     double x = 0.0, y = 0.0;
     const double vx = 2.0, vy = 1.0;
 
+    std::ofstream file("data/data.csv");
+    if (!file.is_open()) {
+        std::cerr << "Failed to open CSV file" << std::endl;
+        return 1;
+    }
+
+    file << "iteration,true_x,true_y,measured_x,measured_y,estimated_x,estimated_y,estimated_vx,estimated_vy\n";
+
     for (int i = 0; i < 100; i++) {
         x += vx * dt;
         y += vy * dt;
@@ -59,13 +68,12 @@ int main() {
         kf.predict();
         kf.update(z);
 
-        if (i % 10 == 0) {
-            const auto& s = kf.get_state();
-            std::cout << "====== Iteration " << i << " ======\n"
-                      << "real: (" << x << ", " << y << ")\n"
-                      << "measured: (" << z(0) << ", " << z(1) << ")\n"
-                      << "pos_estimate: ("  << s(0) << ", " << s(1) << ")\n"
-                      << "vel_estimate: (" << s(2) << ", " << s(3) << ")\n";
-        }
+        const auto& s = kf.get_state();
+
+        file << i << ","
+             << x << "," << y << ","
+             << z(0) << "," << z(1) << ","
+             << s(0) << "," << s(1) << ","
+             << s(2) << "," << s(3) << "\n";
     }
 }
