@@ -1,33 +1,40 @@
 #pragma once
 
+#include <eigen3/Eigen/Dense>
+
 class KalmanFilter {
-private:
-    float x0; // Initial state estimate
-    float x; // State estimate
-    float p0; // Initial estimate variance
-    float p; // Estimate variance
-    float r; // Measurement variance
-    float q; // Process noise variance
-    float K; // Kalman gain
-    int n; // Iteration
-
 public:
-    explicit KalmanFilter(float x0, float p0, float r, float q) : x0(x0), p0(p0), r(r), q(q) {
-        x = x0;
-        p = p0 + q; // p1,0 = p0,0 + q
-        n = 0;
+    using Vec = Eigen::VectorXd;
+    using Mat = Eigen::MatrixXd;
+
+    explicit KalmanFilter(const Mat& F, const Mat& H, const Mat& Q, const Mat& R, const Vec& x0, const Mat& P0)
+        : F(F), H(H), Q(Q), R(R), x(x0), P(P0) {}
+
+    void predict() {
+        x = F * x;
+        P = F * P * F.transpose() + Q;
     }
 
-    void update(float z) {
-        // Update
-        K = p / (p + r);
-        x = x + K * (z - x);
-        p = (1.0f - K) * p;
+    void update(const Vec& z) {
+        Vec y = z - H * x;                          // Innovation
+        Mat S = H * P * H.transpose() + R;          // Innovation covariance
+        Mat K = P * H.transpose() * S.inverse();    // Kalman gain
 
-        // Predict
-        p = p + q;
-        n++;
+        x = x + K * y;
+        P = P - K * H * P;
     }
 
-    float get_state() const { return x; }
+    void setF(const Mat& F_new) { F = F_new; }
+    void setQ(const Mat& Q_new) { Q = Q_new; }
+
+    const Vec& get_state() const { return x; }
+    const Mat& get_covariance() const { return P; }
+
+private:
+    Mat F;  ///< State transition matrix
+    Mat H;  ///< Measurement matrix
+    Mat Q;  ///< Process noise covariance
+    Mat R;  ///< Measurement noise covariance
+    Vec x;  ///< State vector estimate
+    Mat P;  ///< State covariance estimate
 };
