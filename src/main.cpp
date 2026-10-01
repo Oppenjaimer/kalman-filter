@@ -53,7 +53,7 @@ int main() {
         return 1;
     }
 
-    file << "iteration,true_x,true_y,measured_x,measured_y,estimated_x,estimated_y,estimated_vx,estimated_vy\n";
+    file << "iteration,true_x,true_y,measured_x,measured_y,estimated_x,estimated_y,estimated_vx,estimated_vy,variance_x,variance_y\n";
 
     for (int i = 0; i < 100; i++) {
         x += vx * dt;
@@ -66,11 +66,13 @@ int main() {
         kf.update(z);
 
         const auto& s = kf.get_state();
+        const auto& P = kf.get_covariance();
 
         file << i << ","
              << x << "," << y << ","
              << z(0) << "," << z(1) << ","
              << s(0) << "," << s(1) << ","
-             << s(2) << "," << s(3) << "\n";
+             << s(2) << "," << s(3) << ","
+             << P(0, 0) << "," << P(1, 1) << "\n";
     }
 }

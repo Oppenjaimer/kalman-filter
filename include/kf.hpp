@@ -22,10 +22,10 @@ public:
     /**
      * @brief Construct and initialize the Kalman filter.
      *
-     * @param F State transition matrix.
-     * @param H Observation matrix.
-     * @param Q Process noise covariance matrix.
-     * @param R Measurement noise covariance matrix.
+     * @param F  State transition matrix.
+     * @param H  Observation matrix.
+     * @param Q  Process noise covariance matrix.
+     * @param R  Measurement noise covariance matrix.
      * @param x0 Initial state vector estimate.
      * @param P0 Initial state covariance matrix.
      */
