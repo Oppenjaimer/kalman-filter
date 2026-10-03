@@ -1,5 +1,6 @@
 #pragma once
 
+#include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 
 /**
@@ -18,6 +19,12 @@ public:
     using MeasureMat = Eigen::Matrix<Scalar, MeasureDim, MeasureDim>;   ///< Measurement square matrix type (R, S).
     using ObserveMat = Eigen::Matrix<Scalar, MeasureDim, StateDim>;     ///< Observation matrix type (H).
     using GainMat    = Eigen::Matrix<Scalar, StateDim, MeasureDim>;     ///< Kalman gain matrix type (K).
+
+    template <int ControlDim>
+    using ControlVec = Eigen::Matrix<Scalar, ControlDim, 1>;            ///< Control vector type (u).
+
+    template <int ControlDim>
+    using ControlMat = Eigen::Matrix<Scalar, StateDim, ControlDim>;     ///< Control matrix type (B).
 
     /**
      * @brief Construct and initialize the Kalman filter.
@@ -40,6 +47,19 @@ public:
      */
     void predict() {
         x = F * x;
+        P = F * P * F.transpose() + Q;
+    }
+
+    /**
+     * @brief Perform the prediction step with a control input.
+     *
+     * @tparam ControlDim Number of control variables.
+     * @param B Control input model matrix.
+     * @param u Control vector.
+     */
+    template <int ControlDim>
+    void predict(const ControlMat<ControlDim>& B, const ControlVec<ControlDim> u) {
+        x = F * x + B * u;
         P = F * P * F.transpose() + Q;
     }
 

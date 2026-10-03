@@ -48,8 +48,11 @@ int main() {
     std::uniform_real_distribution<double> fail_dist(0.0, 1.0);
 
     double x = 0.0, y = 0.0;
-    const double vx = 2.0, vy = 1.0;
+    double vx = 3.0, vy = -1.0;
     double time = 0.0;
+
+    Eigen::Vector2d u;
+    u << -0.5, 0.3;
 
     std::ofstream file("data/data.csv");
     if (!file.is_open()) {
@@ -59,16 +62,25 @@ int main() {
 
     file << "time,true_x,true_y,measured_x,measured_y,estimated_x,estimated_y,estimated_vx,estimated_vy,variance_x,variance_y\n";
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 150; i++) {
         double dt = dt_dist(rng);
         time += dt;
 
-        x += vx * dt;
-        y += vy * dt;
+        x += vx * dt + 0.5 * u(0) * dt * dt;;
+        y += vy * dt + 0.5 * u(1) * dt * dt;
+        vx += u(0) * dt;
+        vy += u(1) * dt;
 
         kf.setF(makeF(dt));
         kf.setQ(makeQ(dt, sigma_a));
-        kf.predict();
+
+        Eigen::Matrix<double, 4, 2> B;
+        B << 0.5 * dt * dt, 0.0,
+             0.0,           0.5 * dt * dt,
+             dt,            0.0,
+             0.0,           dt;
+
+        kf.predict(B, u);
 
         double measured_x = std::numeric_limits<double>::quiet_NaN();
         double measured_y = std::numeric_limits<double>::quiet_NaN();
