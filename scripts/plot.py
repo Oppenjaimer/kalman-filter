@@ -24,28 +24,28 @@ plt.axis("equal")
 
 # Plot X position vs time with 3σ bounds
 plt.subplot(2, 2, 3)
-plt.plot(df["iteration"], df["true_x"], linestyle="--", label="True X")
-plt.plot(df["iteration"], df["estimated_x"], label="Estimated X")
-plt.fill_between(df["iteration"],
+plt.plot(df["time"], df["true_x"], linestyle="--", label="True X")
+plt.plot(df["time"], df["estimated_x"], label="Estimated X")
+plt.fill_between(df["time"],
                  df["estimated_x"] - 3 * df["sigma_x"],
                  df["estimated_x"] + 3 * df["sigma_x"],
                  alpha=0.2, label=r"$3\sigma$ bound")
 plt.title("X Position")
-plt.xlabel("Iteration")
+plt.xlabel("$t$ (s)")
 plt.ylabel("$x$ (m)")
 plt.legend()
 plt.grid(True)
 
 # Plot Y position vs time with 3σ bounds
 plt.subplot(2, 2, 4)
-plt.plot(df["iteration"], df["true_y"], linestyle="--", label="True Y")
-plt.plot(df["iteration"], df["estimated_y"], label="Estimated Y")
-plt.fill_between(df["iteration"],
+plt.plot(df["time"], df["true_y"], linestyle="--", label="True Y")
+plt.plot(df["time"], df["estimated_y"], label="Estimated Y")
+plt.fill_between(df["time"],
                  df["estimated_y"] - 3 * df["sigma_y"],
                  df["estimated_y"] + 3 * df["sigma_y"],
                  alpha=0.2, label=r"$3\sigma$ bound")
 plt.title("Y Position")
-plt.xlabel("Iteration")
+plt.xlabel("$t$ (s)")
 plt.ylabel("$y$ (m)")
 plt.legend()
 plt.grid(True)
