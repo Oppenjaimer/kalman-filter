@@ -97,6 +97,12 @@ public:
     void setQ(const StateMat& Q_new) { Q = Q_new; }
 
     /**
+     * @brief Update the measurement noise covariance matrix.
+     * @param R_new New measurement noise covariance matrix.
+     */
+    void setR(const StateMat& R_new) { R = R_new; }
+
+    /**
      * @brief Retrieve the current state vector estimate.
      * @return Constant reference to the state vector x.
      */
