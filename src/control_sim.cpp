@@ -48,11 +48,8 @@ int main() {
     std::uniform_real_distribution<double> fail_dist(0.0, 1.0);
 
     double x = 0.0, y = 0.0;
-    double vx = 3.0, vy = -1.0;
+    double vx = 1.0, vy = 0.0;
     double time = 0.0;
-
-    Eigen::Vector2d u;
-    u << -0.5, 0.3;
 
     std::ofstream file("data/data.csv");
     if (!file.is_open()) {
@@ -65,6 +62,10 @@ int main() {
     for (int i = 0; i < 150; i++) {
         double dt = dt_dist(rng);
         time += dt;
+
+        Eigen::Vector2d u;
+        u << -2.0 * std::sin(time) - time * std::cos(time),
+             2.0 * std::cos(time) - time * std::sin(time);
 
         x += vx * dt + 0.5 * u(0) * dt * dt;;
         y += vy * dt + 0.5 * u(1) * dt * dt;
