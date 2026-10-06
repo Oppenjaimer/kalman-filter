@@ -1,4 +1,5 @@
 build/
 bin/
-data/
 .venv/
+
+*.csv

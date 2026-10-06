@@ -3,7 +3,10 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <random>
+#include <sstream>
+#include <string>
 
 Eigen::Matrix4d makeF(double dt) {
     Eigen::Matrix4d F = Eigen::Matrix4d::Identity();
@@ -28,8 +31,8 @@ Eigen::Matrix4d makeQ(double dt, double sigma_a) {
 }
 
 int main() {
-    const double sigma_a = 0.5;     // Process noise
-    const double sigma_z = 1.0;     // Measurement noise
+    const double sigma_a = 1.5;     // Process noise
+    const double sigma_z = 0.1;     // Measurement noise
     const double fail_rate = 0.2;   // Sensor failure rate
 
     Eigen::Matrix<double, 2, 4> H;
@@ -37,19 +40,17 @@ int main() {
          0, 1, 0, 0;
 
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity() * sigma_z * sigma_z;
-    Eigen::Vector4d x0 = Eigen::Vector4d::Zero();
-    Eigen::Matrix4d P0 = Eigen::Matrix4d::Identity() * 100.0;
-
-    KalmanFilter<4, 2, double> kf(makeF(0.1), H, makeQ(0.1, sigma_a), R, x0, P0);
+    Eigen::Matrix4d P0 = Eigen::Matrix4d::Identity() * 10.0;
 
     std::mt19937 rng(std::random_device{}());
     std::normal_distribution<double> noise(0.0, sigma_z);
-    std::uniform_real_distribution<double> dt_dist(0.05, 0.15); // Sensor jitter (50-150 ms)
     std::uniform_real_distribution<double> fail_dist(0.0, 1.0);
 
-    double x = 0.0, y = 0.0;
-    double vx = 1.0, vy = 0.0;
-    double time = 0.0;
+    std::ifstream dataset("data/dataset.txt");
+    if (!dataset.is_open()) {
+        std::cerr << "Failed to open dataset" << std::endl;
+        return 1;
+    }
 
     std::ofstream file("data/data.csv");
     if (!file.is_open()) {
@@ -59,47 +60,56 @@ int main() {
 
     file << "time,true_x,true_y,measured_x,measured_y,estimated_x,estimated_y,estimated_vx,estimated_vy,variance_x,variance_y\n";
 
-    for (int i = 0; i < 150; i++) {
-        double dt = dt_dist(rng);
-        time += dt;
+    std::string line;
+    double prev_time = -1.0;
+    double start_time = 0.0;
 
-        Eigen::Vector2d u;
-        u << -2.0 * std::sin(time) - time * std::cos(time),
-             2.0 * std::cos(time) - time * std::sin(time);
+    // Initialize Kalman filter upon reading first valid line
+    std::unique_ptr<KalmanFilter<4, 2>> kf = nullptr;
 
-        x += vx * dt + 0.5 * u(0) * dt * dt;;
-        y += vy * dt + 0.5 * u(1) * dt * dt;
-        vx += u(0) * dt;
-        vy += u(1) * dt;
+    while (std::getline(dataset, line)) {
+        if (line.empty() || line[0] == '#') continue;
 
-        kf.setF(makeF(dt));
-        kf.setQ(makeQ(dt, sigma_a));
+        std::istringstream iss(line);
+        double time, tx, ty, tz, qx, qy, qz, qw;
+        if (!(iss >> time >> tx >> ty >> tz >> qx >> qy >> qz >> qw)) continue;
 
-        Eigen::Matrix<double, 4, 2> B;
-        B << 0.5 * dt * dt, 0.0,
-             0.0,           0.5 * dt * dt,
-             dt,            0.0,
-             0.0,           dt;
+        if (!kf) {
+            start_time = time;
+            prev_time = time;
 
-        kf.predict(B, u);
+            Eigen::Vector4d x0;
+            x0 << tx, ty, 0.0, 0.0;
+
+            kf = std::make_unique<KalmanFilter<4, 2>>(makeF(0.01), H, makeQ(0.01, sigma_a), R, x0, P0);
+            continue;
+        }
+
+        double dt = time - prev_time;
+        if (dt <= 0.0) continue;
+        prev_time = time;
+
+        kf->setF(makeF(dt));
+        kf->setQ(makeQ(dt, sigma_a));
+        kf->predict();
 
         double measured_x = std::numeric_limits<double>::quiet_NaN();
         double measured_y = std::numeric_limits<double>::quiet_NaN();
 
         if (fail_dist(rng) > fail_rate) {
             Eigen::Vector2d z;
-            z << x + noise(rng), y + noise(rng);
-            kf.update(z);
+            z << tx + noise(rng), ty + noise(rng);
+            kf->update(z);
 
             measured_x = z(0);
             measured_y = z(1);
         }
 
-        const auto& s = kf.get_state();
-        const auto& P = kf.get_covariance();
+        const auto& s = kf->get_state();
+        const auto& P = kf->get_covariance();
 
-        file << time << ","
-             << x << "," << y << ","
+        file << time - start_time << ","
+             << tx << "," << ty << ","
              << measured_x << "," << measured_y << ","
              << s(0) << "," << s(1) << ","
              << s(2) << "," << s(3) << ","
