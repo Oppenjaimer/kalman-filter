@@ -2,7 +2,6 @@ SRC_DIR = src
 INC_DIR = include
 BUILD_DIR = build
 BIN_DIR = bin
-TARGET = $(BIN_DIR)/main
 
 CXX = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -pedantic -I$(INC_DIR)
@@ -10,11 +9,12 @@ LDFLAGS =
 
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRC_FILES))
+TARGETS   = $(patsubst $(SRC_DIR)/%.cpp, $(BIN_DIR)/%, $(SRC_FILES))
 
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): $(OBJ_FILES) | $(BIN_DIR)
-	$(CXX) $(OBJ_FILES) -o $@ $(LDFLAGS)
+$(BIN_DIR)/%: $(BUILD_DIR)/%.o | $(BIN_DIR)
+	$(CXX) $< -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -25,4 +25,5 @@ $(BUILD_DIR) $(BIN_DIR):
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
+.SECONDARY: $(OBJ_FILES)
 .PHONY: all clean
