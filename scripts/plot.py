@@ -1,12 +1,22 @@
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 df = pd.read_csv("data/data.csv")
 
 # Calculate standard deviation
 df["sigma_x"] = np.sqrt(df["variance_x"])
 df["sigma_y"] = np.sqrt(df["variance_y"])
+
+# Helper function to compute y-axis limits based on actual trajectory
+def get_axis_limits(true_data, estimated_data, min_padding=0.5):
+    min_val = min(true_data.min(), estimated_data.min())
+    max_val = max(true_data.max(), estimated_data.max())
+
+    val_range = max_val - min_val
+    padding = max(val_range * 0.2, min_padding) # 20% margin or fixed minimum padding
+
+    return min_val - padding, max_val + padding
 
 plt.figure(figsize=(12, 10))
 
@@ -30,6 +40,7 @@ plt.fill_between(df["time"],
                  df["estimated_x"] - 3 * df["sigma_x"],
                  df["estimated_x"] + 3 * df["sigma_x"],
                  alpha=0.2, label=r"$3\sigma$ bound")
+plt.ylim(get_axis_limits(df["true_x"], df["estimated_x"]))
 plt.title("X Position")
 plt.xlabel("$t$ (s)")
 plt.ylabel("$x$ (m)")
@@ -44,6 +55,7 @@ plt.fill_between(df["time"],
                  df["estimated_y"] - 3 * df["sigma_y"],
                  df["estimated_y"] + 3 * df["sigma_y"],
                  alpha=0.2, label=r"$3\sigma$ bound")
+plt.ylim(get_axis_limits(df["true_y"], df["estimated_y"]))
 plt.title("Y Position")
 plt.xlabel("$t$ (s)")
 plt.ylabel("$y$ (m)")
