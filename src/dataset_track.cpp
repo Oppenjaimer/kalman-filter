@@ -1,5 +1,6 @@
 #include "kf.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -7,6 +8,7 @@
 #include <random>
 #include <sstream>
 #include <string>
+#include <vector>
 
 Eigen::Matrix4d makeF(double dt) {
     Eigen::Matrix4d F = Eigen::Matrix4d::Identity();
@@ -30,7 +32,47 @@ Eigen::Matrix4d makeQ(double dt, double sigma_a) {
     return Q * sigma_a * sigma_a;
 }
 
-int main() {
+int prompt_dataset(std::string& dataset_path) {
+    std::vector<std::string> datasets;
+
+    // Scan data/ directory for .txt files
+    if (std::filesystem::exists("data") && std::filesystem::is_directory("data")) {
+        for (const auto& entry : std::filesystem::directory_iterator("data")) {
+            if (entry.path().extension() == ".txt")
+                datasets.push_back(entry.path().string());
+        }
+    }
+
+    if (datasets.empty()) {
+        std::cerr << "No .txt datasets found in the data/ directory\n";
+        return 1;
+    }
+
+    std::cout << "--- Available Datasets ---\n";
+    for (size_t i = 0; i < datasets.size(); i++) {
+        std::cout << "[" << i + 1 << "] " << datasets[i] << "\n";
+    }
+
+    std::cout << "\nSelect a dataset (1-" << datasets.size() << "): ";
+    int choice = 0;
+    if (!(std::cin >> choice) || choice < 1 || choice > static_cast<int>(datasets.size())) {
+        std::cerr << "Invalid selection\n";
+        return 1;
+    }
+
+    dataset_path = datasets[choice - 1];
+    return 0;
+}
+
+int main(int argc, char** argv) {
+    std::string dataset_path;
+
+    if (argc > 1) {
+        dataset_path = argv[1];
+    } else {
+        if (prompt_dataset(dataset_path) == 1) return 1;
+    }
+
     const double sigma_a = 1.5;     // Process noise
     const double sigma_z = 0.1;     // Measurement noise
     const double fail_rate = 0.2;   // Sensor failure rate
@@ -46,15 +88,15 @@ int main() {
     std::normal_distribution<double> noise(0.0, sigma_z);
     std::uniform_real_distribution<double> fail_dist(0.0, 1.0);
 
-    std::ifstream dataset("data/dataset.txt");
+    std::ifstream dataset(dataset_path);
     if (!dataset.is_open()) {
-        std::cerr << "Failed to open dataset" << std::endl;
+        std::cerr << "Failed to open dataset\n";
         return 1;
     }
 
     std::ofstream file("data/data.csv");
     if (!file.is_open()) {
-        std::cerr << "Failed to open CSV file" << std::endl;
+        std::cerr << "Failed to open CSV file\n";
         return 1;
     }
 
