@@ -1,6 +1,6 @@
 # Kalman Filter
 
-A 2D state estimation and tracking engine built in C++ using [Eigen](https://libeigen.gitlab.io/). It implements a numerically stable linear Kalman filter capable of extracting clean trajectories from highly noisy sensor data and prolonged sensor blackouts. Data visualization is handled via Python and [Matplotlib](https://matplotlib.org/).
+A 2D state estimation and tracking engine built in C++ using [Eigen](https://libeigen.gitlab.io/). It implements a numerically stable linear Kalman filter capable of extracting clean trajectories from highly noisy sensor data and prolonged sensor blackouts. Data visualization is handled via Python using [Pandas](https://pandas.pydata.org/) and [Matplotlib](https://matplotlib.org/).
 
 ## Features
 
